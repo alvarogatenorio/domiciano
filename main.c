@@ -16,6 +16,12 @@
 #define FILE_HEADER_SIZE DWORD_BYTES + FILE_SIZE_BYTES + DWORD_BYTES
 #define CHUNK_HEADER_SIZE CHUNK_ID_BYTES + CHUNK_SIZE_BYTES
 
+#define DWORD_MASK MASK1
+#define INT32_MASK MASK4
+#define FILE_SIZE_MASK MASK4
+#define CHUNK_SIZE_MASK MASK4
+#define SIZE_T_MASK MASK2
+
 typedef char DWord [DWORD_BYTES + 1];
 typedef unsigned long int Int32;
 
@@ -38,7 +44,7 @@ typedef struct Chunk {
 int read_dword(FILE* file, DWord dword) {
 	fread(dword, (size_t)(DWORD_BYTES), 1, file);
 	for (int i = 0; i < DWORD_BYTES; i++) {
-		dword[i] &= MASK1;
+		dword[i] &= DWORD_MASK;
 	}
 	dword[DWORD_BYTES] = '\0';
 	return 0;
@@ -47,7 +53,7 @@ int read_dword(FILE* file, DWord dword) {
 int read_file_header(FILE* file, FileHeader* header) {
 	read_dword(file, header->id);
 	fread(&(header->size), (size_t)(FILE_SIZE_BYTES), 1, file);
-	header->size &= MASK4;
+	header->size &= FILE_SIZE_MASK;
 	read_dword(file, header->codec);
 	return 0;
 }
@@ -55,13 +61,13 @@ int read_file_header(FILE* file, FileHeader* header) {
 int read_chunk_header(FILE* file, ChunkHeader* header) {
 	read_dword(file, header->id);
 	fread(&(header->size), (size_t)(CHUNK_SIZE_BYTES), 1, file);
-	header->size &= MASK4;
+	header->size &= CHUNK_SIZE_MASK;
 	return 0;
 }
 
 int read_chunk(FILE* file, Chunk* chunk) {
 	read_chunk_header(file, &(chunk->header));
-	if ((chunk->header.size) != (chunk->header.size & MASK2)) {
+	if ((chunk->header.size) != (chunk->header.size & SIZE_T_MASK)) {
 		printf("ERROR: The chunk data is too large.\n");
 		return 1;
 	}
@@ -74,7 +80,7 @@ Int32 get_memory_map_address(FILE* file) {
 	fseek(file, (long) (FILE_HEADER_SIZE + CHUNK_HEADER_SIZE + INT32_BYTES), SEEK_SET);
 	Int32 memory_map_address;
 	fread(&memory_map_address, (size_t)(INT32_BYTES), 1, file);
-	memory_map_address &= MASK4;
+	memory_map_address &= INT32_MASK;
 	return memory_map_address;
 }
 
