@@ -1,25 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MASK1 0xF
-#define MASK2 0xFF
-#define MASK3 0xFFF
-#define MASK4 0xFFFF
+#define MASK1 0xFF
+#define MASK2 0xFFFF
+#define MASK3 0xFFFFFF
+#define MASK4 0xFFFFFFFF
 
-#define DWORD_BYTES 4
 #define FILE_SIZE_BYTES 4
-#define CHUNK_ID_BYTES 4
 #define CHUNK_SIZE_BYTES 4
 
+#define CHUNK_ID_BYTES 4
+#define DWORD_BYTES 4
+
+typedef char DWord [DWORD_BYTES + 1];
+typedef unsigned long int Int32;
+
 typedef struct FileHeader {
-	char id [DWORD_BYTES + 1];
-	unsigned long int size;
-	char codec [DWORD_BYTES + 1];
+	DWord id;
+	Int32 size;
+	DWord codec;
 } FileHeader;
 
 typedef struct ChunkHeader {
-	char id [CHUNK_ID_BYTES + 1];
-	unsigned long int size;
+	DWord id;
+	Int32 size;
 } ChunkHeader;
 
 typedef struct Chunk {
@@ -27,10 +31,10 @@ typedef struct Chunk {
 	void* data;
 } Chunk;
 
-int read_dword(FILE* file, char* dword) {
+int read_dword(FILE* file, DWord dword) {
 	fread(dword, DWORD_BYTES, 1, file);
 	for (int i = 0; i < DWORD_BYTES; i++) {
-		dword[i] &= MASK2;
+		dword[i] &= MASK1;
 	}
 	dword[DWORD_BYTES] = '\0';
 	return 0;
@@ -38,7 +42,7 @@ int read_dword(FILE* file, char* dword) {
 
 int read_file_header(FILE* file, FileHeader* header) {
 	read_dword(file, header->id);
-	fread(&(header->size), CHUNK_SIZE_BYTES, 1, file);
+	fread(&(header->size), FILE_SIZE_BYTES, 1, file);
 	header->size &= MASK4;
 	read_dword(file, header->codec);
 	return 0;
